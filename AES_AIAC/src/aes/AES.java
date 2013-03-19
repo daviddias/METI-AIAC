@@ -3,14 +3,13 @@ package aes;
 public class AES {
 
 	
-	
-	
 	CypherMode cypherMode;
 	BlockCypherMode blockCypherMode;
 	
 	//128, 192 or 256 bit
 	byte[] key;
-	
+	byte[] input;
+	String inputFilePath;
 	
 	
 	/**
@@ -20,12 +19,55 @@ public class AES {
 	 * @param blockCypherMode
 	 * @param key
 	 */
-	public void init(CypherMode cypherMode, BlockCypherMode blockCypherMode, byte[] key ) {
+	public void init(CypherMode cypherMode, BlockCypherMode blockCypherMode, byte[] key, byte[] input, String outputFilePath ) {
 		this.cypherMode = cypherMode;
 		this.blockCypherMode = blockCypherMode;
 		this.key = key;
+		this.input = input;
+		this.inputFilePath = outputFilePath;
 	}
 
+	
+	/**
+	 * FOR TESTING PURPOSES ---------------------------------------------------------------------------
+	 */
+	
+	
+	public void test(){
+		
+		System.out.println("Testing ECB Encryption");
+		byte[] cypheredText = AESAPI.encrypt(input,key);
+		System.out.println(cypheredText);
+		System.out.println("Encryption Complete");
+		
+		System.out.println("Testing ECB Decryption");
+		byte[] plainText = AESAPI.decrypt(cypheredText,key);
+		System.out.println(plainText);
+		System.out.println("Decryption Complete");
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/*
+	 * -----------------------------------------------------------------------------------------------
+	 */
+	
+	
+	
+	
+	
+	
+	
+	
 
 	// Cyphering Methods
 	// 
@@ -40,6 +82,7 @@ public class AES {
 	 * @return
 	 */
 	byte[] update(byte[] plaintext){
+		
 		return plaintext;
 
 	}
@@ -96,7 +139,7 @@ public class AES {
 
 	Notas: 
  * A Chave tem de ser igual ao tamanho do Bloco
- * O AESAPI.java cifra 1 bloco
+ * O AESAPI.java está a cifrar tuti 
  * A Cifra por blocos ECB/CBC/CTR é feita por cima do algoritmo AES
 
  * Padding é feito adicionando ao final o número de blocos que foram adicionados (genero se adicionarmos 8 bytes, metemos 0808080808080808)

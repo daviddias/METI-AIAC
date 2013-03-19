@@ -298,10 +298,10 @@ public class AESAPI {
 		padding[0] = (byte) 0x80; //0x80h=128d
 		
 		// Fill the padding =)
-		for (i = 1; i < lenght; i++) {			
-			//padding[i] = 0;
-			padding[i] = (byte)lenght;
-		}
+//		for (i = 0; i < lenght; i++) {			
+//			//padding[i] = 0;
+//			padding[i] = (byte)lenght;
+//		}
 
 		byte[] tmp = new byte[in.length + lenght];		
 		byte[] bloc = new byte[16];							
@@ -361,33 +361,33 @@ public class AESAPI {
 	
 	
 	private static byte[] deletePadding(byte[] input) {
-		// Remove padding of 0
-		// int count = 0;
-		//
-		// int i = input.length - 1;
-		// while (input[i] == 0) {
-		//		count++;
-		//		i--;
-		// }
-		//
-		// byte[] tmp = new byte[input.length - count - 1];
-		// System.arraycopy(input, 0, tmp, 0, tmp.length);
-		// return tmp;
+		 //Remove padding of 0
+		 int count = 0;
+		
+		 int i = input.length - 1;
+		 while (input[i] == 0) {
+				count++;
+				i--;
+		 }
+		
+		 byte[] tmp = new byte[input.length - count - 1];
+		 System.arraycopy(input, 0, tmp, 0, tmp.length);
+		 return tmp;
 		
 		
-		// Remove padding of numbers
-		int count = 0; // Num de bytes a serem removidos
-
-		int paddingByte = input.length - 1; 
-		int i = input.length - 1;
-		while (input[i] == paddingByte) {
-			count++;
-			i--;
-		}
-
-		byte[] tmp = new byte[input.length - count - 1];
-		System.arraycopy(input, 0, tmp, 0, tmp.length);
-		return tmp;
+//		// Remove padding of numbers
+//		int count = 0; // Num de bytes a serem removidos
+//
+//		int paddingByte = input.length - 1; 
+//		int i = input.length - 1;
+//		while (input[i] == paddingByte) {
+//			count++;
+//			i--;
+//		}
+//
+//		byte[] tmp = new byte[input.length - count - 1];
+//		System.arraycopy(input, 0, tmp, 0, tmp.length);
+//		return tmp;
 		
 				
 		
