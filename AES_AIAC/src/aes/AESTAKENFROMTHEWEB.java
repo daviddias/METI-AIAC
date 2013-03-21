@@ -1,9 +1,9 @@
 package aes;
 
-public class AESAPI {
+public class AESTAKENFROMTHEWEB {
 
-	private static int Nb, Nk, Nr;
-	private static byte[][] w;
+	public static int Nb, Nk, Nr;
+	public static byte[][] w;
 
 	private static int[] sbox = { 0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F,
 			0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76, 0xCA, 0x82,
@@ -81,7 +81,7 @@ public class AESAPI {
 
 	}
 
-	private static byte[][] generateSubkeys(byte[] key) {
+	public static byte[][] generateSubkeys(byte[] key) {
 		byte[][] tmp = new byte[Nb * (Nr + 1)][4];
 
 		int i = 0;
@@ -281,6 +281,8 @@ public class AESAPI {
 	
 	
 	
+	
+	
 	public static byte[] encrypt(byte[] in,byte[] key){
 		
 		Nb = 4;
@@ -291,17 +293,20 @@ public class AESAPI {
 		int lenght=0;
 		byte[] padding = new byte[1];
 		int i;
-		
-		// Figure out how many Padding Bytes needed (stored by lenght)
-		lenght = 16 - in.length % 16;	 			
+		lenght = 16 - in.length % 16;				
 		padding = new byte[lenght];					
-		padding[0] = (byte) 0x80; //0x80h=128d
+//		padding[0] = (byte) 0x80;
 		
-		// Fill the padding =)
-//		for (i = 0; i < lenght; i++) {			
-//			//padding[i] = 0;
-//			padding[i] = (byte)lenght;
-//		}
+		
+		//Fill the padding =)
+		for (i = 0; i < lenght; i++) {			
+			//padding[i] = 0;
+			padding[i] = (byte)lenght;
+		}
+		
+		
+		//for (i = 1; i < lenght; i++)				
+		//	padding[i] = 0;
 
 		byte[] tmp = new byte[in.length + lenght];		
 		byte[] bloc = new byte[16];							
@@ -312,12 +317,19 @@ public class AESAPI {
 		int count = 0;
 
 		for (i = 0; i < in.length + lenght; i++) {
+			
+			// Cada vez que copia 16 bytes fz isto
 			if (i > 0 && i % 16 == 0) {
 				bloc = encryptBloc(bloc);
+				// Copia para o tmp o bloc e meteo apartir da casa i-16
 				System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
 			}
+			
+			// Vai copiar 1 byte de cada vez
 			if (i < in.length)
 				bloc[i % 16] = in[i];
+			
+			// Se não houver mais bytes copia o padding
 			else{														
 				bloc[i % 16] = padding[count % 16];
 				count++;
@@ -330,6 +342,11 @@ public class AESAPI {
 		
 		return tmp;
 	}
+	
+	
+	
+	
+	
 	
 	public static byte[] decrypt(byte[] in,byte[] key){
 		int i;
@@ -354,6 +371,7 @@ public class AESAPI {
 		bloc = decryptBloc(bloc);
 		System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
 
+
 		tmp = deletePadding(tmp);
 
 		return tmp;
@@ -361,26 +379,10 @@ public class AESAPI {
 	
 	
 	private static byte[] deletePadding(byte[] input) {
-		 //Remove padding of 0
-		 int count = 0;
-		
-		 int i = input.length - 1;
-		 while (input[i] == 0) {
-				count++;
-				i--;
-		 }
-		
-		 byte[] tmp = new byte[input.length - count - 1];
-		 System.arraycopy(input, 0, tmp, 0, tmp.length);
-		 return tmp;
-		
-		
-//		// Remove padding of numbers
-//		int count = 0; // Num de bytes a serem removidos
+//		int count = 0;
 //
-//		int paddingByte = input.length - 1; 
 //		int i = input.length - 1;
-//		while (input[i] == paddingByte) {
+//		while (input[i] == 0) {
 //			count++;
 //			i--;
 //		}
@@ -389,8 +391,25 @@ public class AESAPI {
 //		System.arraycopy(input, 0, tmp, 0, tmp.length);
 //		return tmp;
 		
-				
+		
+		
+		// Remove padding of numbers
+		int count = 0; // Num de bytes a serem removidos
+
+		int paddingByte = input.length - 1; 
+		int i = input.length - 1;
+		while (input[i] == paddingByte) {
+			count++;
+			i--;
+		}
+
+		byte[] tmp = new byte[input.length - count - 1];
+		System.arraycopy(input, 0, tmp, 0, tmp.length);
+		return tmp;
 		
 	}
+	
+	
+
 	
 }
