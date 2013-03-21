@@ -219,20 +219,14 @@ public class AES_API {
 			int i;
 			lenght = 16 - input.length % 16;				
 			padding = new byte[lenght];					
-//			padding[0] = (byte) 0x80;
 					
 			//Fill the padding =)
 			for (i = 0; i < lenght; i++) {			
-				//padding[i] = 0;
 				padding[i] = (byte)lenght;
-			}
-			
+			}		
 
 			byte[] tmp = new byte[input.length + lenght];		
 			byte[] bloc = new byte[16];							
-			
-			
-			//w = generateSubkeys(key);
 			
 			int count = 0;
 
@@ -268,13 +262,6 @@ public class AES_API {
 			int i;
 			byte[] tmp = new byte[input.length];
 			byte[] bloc = new byte[16];
-			
-			
-			//Nb = 4;
-			//Nk = key.length/4;
-			//Nr = Nk + 6;
-			//w = generateSubkeys(key);
-
 
 			for (i = 0; i < input.length; i++) {
 				if (i > 0 && i % 16 == 0) {
@@ -286,7 +273,6 @@ public class AES_API {
 			}
 			bloc = decryptBloc(bloc);
 			System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-
 
 			tmp = deletePadding(tmp);
 
@@ -307,7 +293,7 @@ public class AES_API {
 	 * @return
 	 */
 	public byte[] doFinal(byte[] input,int inputlen){
-		return input;
+		return doFinal(input);
 	}
 
 	/*
