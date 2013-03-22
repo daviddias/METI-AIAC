@@ -79,12 +79,6 @@ public class AESMain{
 
 
 
-
-
-
-
-
-		//Stream method
 		try {
 			Long startTime = new Date().getTime();
 
@@ -132,67 +126,6 @@ public class AESMain{
 
 		}
 		catch (Exception e) {e.printStackTrace();}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		/**
-		 * ------------------------------------------------
-		 * Testing
-		 */
-		/*
-
-		AES_API aes_api_encrypt = new AES_API();
-		aes_api_encrypt.init(CypherMode.ENCRYPT, BlockCypherMode.ECB, key);
-		byte[] input = FileRW.readFile(inputFilePath);
-		long start = System.currentTimeMillis();
-
-
-		byte[] CypherText = aes_api_encrypt.doFinal(input);
-		/*
-		try {
-			System.out.println("Input PlainText was:");
-			System.out.println(new String(input, "UTF-8"));
-			System.out.println("CypherText was:");
-			System.out.println(new String(CypherText, "UTF-8"));
-		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
-		 */
-
-		//System.out.println("Going to decrypt");
-		/*
-		AES_API aes_api_decrypt = new AES_API();
-		aes_api_decrypt.init(CypherMode.DECRYPT, BlockCypherMode.ECB, key);
-
-		byte[] outputPlainText = aes_api_decrypt.doFinal(CypherText);
-		/*
-		try {
-			System.out.println("CypherText was:");
-			System.out.println(new String(CypherText, "UTF-8"));
-			System.out.println("Output PlainText was:");
-			System.out.println(new String(outputPlainText, "UTF-8"));
-		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
-		 */
-		/*
-		System.out.println("\n Finito \n");
-
-		long end = System.currentTimeMillis();
-		System.out.println(end-start);
-		 */
-		/*
-		 * ------------------------------------------------
-		 */
-
 	}
 
 

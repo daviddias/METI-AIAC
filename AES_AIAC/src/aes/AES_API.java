@@ -1,10 +1,8 @@
 package aes;
 
-import java.io.UnsupportedEncodingException;
 
 
 public class AES_API {
-
 
 	CypherMode cypherMode;
 	BlockCypherMode blockCypherMode;
@@ -15,9 +13,11 @@ public class AES_API {
 	byte[] blocBuffer = null; //holds a bloc in Buffer
 	byte[] leftoversBuffer = null; //holds the bytes that were unable to fill a full bloc
 
+	byte[] lastBloc = null; //holds last bloc (used for CBC)
+	byte[] iv = new byte[128];
+	
 	public static int Nb, Nk, Nr;
 	public static byte[][] w;
-
 
 
 	private static int[] sbox = { 0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F,
@@ -112,6 +112,9 @@ public class AES_API {
 
 		w = generateSubkeys(key);
 
+		for (int i = 0; i<128;i++){
+			iv[i] = (byte) 0;
+		}
 	}
 
 	/*
@@ -160,23 +163,32 @@ public class AES_API {
 			
 			//2 Cifrar todos os blocos inteiros
 			int nFullBlocks = tmp.length/16;
-			System.out.println("[update]: nFullBlocks: " + nFullBlocks);
+			//System.out.println("[update]: nFullBlocks: " + nFullBlocks);
 			
 			int leftOversSize = tmp.length%16;
-			System.out.println("[update]: leftOversSize: " + leftOversSize);
+			//System.out.println("[update]: leftOversSize: " + leftOversSize);
 			
 			byte[] result = new byte[nFullBlocks*16];
 			byte[] bloc = new byte[16];
 			
 			int i = 0;
-			for(i=0;i<nFullBlocks;i++){
-				System.arraycopy(tmp, i*16, bloc, 0, bloc.length);
+			for(i=0;i<nFullBlocks;i++){				
+				System.arraycopy(tmp, i*16, bloc, 0, bloc.length);	
+				if(blockCypherMode.equals(BlockCypherMode.CBC)){
+					bloc = xor_func(bloc, iv);
+				}
 				bloc = encryptBloc(bloc);
+				if(blockCypherMode.equals(BlockCypherMode.CBC)){
+					System.arraycopy(bloc, 0, iv, 0, bloc.length);
+					//iv = bloc;
+				}
+				
 				System.arraycopy(bloc, 0, result, i*16, bloc.length);
 			}
 			
 			// 3 Guardar o último bloco cifrado
 			blocBuffer = bloc; // Vai dar jeito para o CBC
+			//lastBloc = bloc; 
 			
 			// 4 Se houver leftovers, guardar
 			if(leftOversSize>0){
@@ -220,9 +232,9 @@ public class AES_API {
 			
 			// 2 Descifra todos os blocos inteiros menos o último
 			int nFullBlocks = tmp.length/16;
-			System.out.println("[update]: nFullBlocks: " + nFullBlocks);
+			//System.out.println("[update]: nFullBlocks: " + nFullBlocks);
 			int leftOversSize = tmp.length%16;
-			System.out.println("[update]: leftOversSize: " + leftOversSize);
+			//System.out.println("[update]: leftOversSize: " + leftOversSize);
 			
 			//byte[] result = new byte[tmp.length];
 			byte[] result = new byte[(nFullBlocks*16) - (1*16)]; //retornamos todos menos o último 
@@ -232,11 +244,22 @@ public class AES_API {
 			int i = 0;
 			for(i=0;i<(nFullBlocks-1);i++){//Todos menos o último
 				System.arraycopy(tmp, i*16, bloc, 0, bloc.length);
+				if(blockCypherMode.equals(BlockCypherMode.CBC)){
+					blocBuffer = new byte[16];
+					System.arraycopy(bloc, 0, blocBuffer, 0, bloc.length);
+					//blocBuffer = bloc;					
+				}
 				bloc = decryptBloc(bloc);
+				if(blockCypherMode.equals(BlockCypherMode.CBC)){
+					bloc = xor_func(bloc, iv); //xor com o anterior
+					System.arraycopy(blocBuffer, 0, iv, 0, bloc.length);
+					//iv = blocBuffer; //guardo o seguinte
+				}
+				
 				System.arraycopy(bloc, 0, result, i*16, bloc.length);
-				System.out.println("Valor de i: " + i);
+				//System.out.println("Valor de i: " + i);
 			}
-			System.out.println("Valor de i DEPOIS do for: " + i);
+			//System.out.println("Valor de i DEPOIS do for: " + i);
 			
 			// 3 Guarda o último bloco ainda por descifrar
 			System.arraycopy(tmp, i*16, bloc, 0, bloc.length); // ùltimo
@@ -319,6 +342,9 @@ public class AES_API {
 					lastBlock[i] = (byte) paddingLength;
 				}
 			}
+			if(blockCypherMode.equals(BlockCypherMode.CBC)){
+				lastBlock = xor_func(lastBlock, iv);
+			}
 			lastBlock = encryptBloc(lastBlock);
 			
 			byte[] result = new byte[tmp.length + lastBlock.length];
@@ -346,12 +372,16 @@ public class AES_API {
 			
 			// 2 Descifra o último bloco e tira o Padding(neste caso é impossivel haver ainda leftovers) 
 			byte[] bloc = new byte[16];
+
 			bloc = decryptBloc(blocBuffer);
+			if(blockCypherMode.equals(BlockCypherMode.CBC)){
+				bloc = xor_func(bloc, iv); //xor com o anterior
+			}
 			
 			blocBuffer = null;
 			int paddingLength = (int) bloc[15];
 			
-			System.out.println("Qual é o Padding " + paddingLength);
+			//System.out.println("Qual é o Padding " + paddingLength);
 			
 			byte[] result = new byte[tmp.length + 16 - paddingLength];
 			System.arraycopy(tmp, 0, result, 0, tmp.length);
@@ -601,55 +631,11 @@ public class AES_API {
 
 
 
-	private static byte[] deletePadding(byte[] input) {
-
-		// Remove padding of numbers
-		int count = 0; // Num de bytes a serem removidos
-
-		int paddingByte = input.length - 1; 
-		int i = input.length - 1;
-		while (input[i] == paddingByte) {
-			count++;
-			i--;
-		}
-
-		byte[] tmp = new byte[input.length - count - 1];
-		System.arraycopy(input, 0, tmp, 0, tmp.length);
-		return tmp;
-
-	}
 
 
 	/*
 	 *  ------------------------------------------------------------------------------
 	 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
