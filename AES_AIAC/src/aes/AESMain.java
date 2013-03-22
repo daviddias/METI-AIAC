@@ -78,7 +78,7 @@ public class AESMain{
 		}
 
 
-
+		System.out.println("Start");
 		try {
 			Long startTime = new Date().getTime();
 
@@ -98,12 +98,12 @@ public class AESMain{
 			while(true){
 				nBytesRead = is.read(input);
 				if (nBytesRead > 0){
-					System.out.println("Number of Bytes Read: " + nBytesRead);
+					//System.out.println("Number of Bytes Read: " + nBytesRead);
 					tmp = new byte[nBytesRead];
 					System.arraycopy(input, 0, tmp, 0, nBytesRead);
 					result = aes_api.update(tmp);
 					
-					System.out.println("Size of result: "+ result.length + " VS nBytesRead:  " + nBytesRead );
+					//System.out.println("Size of result: "+ result.length + " VS nBytesRead:  " + nBytesRead );
 					
 					os.write(result, 0, result.length);
 					
@@ -117,7 +117,7 @@ public class AESMain{
 				}
 			}
 			result = aes_api.doFinal(null);
-			System.out.println("Size of result: " + result.length );
+			//System.out.println("Size of result: " + result.length );
 			os.write(result, 0, result.length); //Escrever;
 			result = null;
 
