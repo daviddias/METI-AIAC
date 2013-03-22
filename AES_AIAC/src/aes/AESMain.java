@@ -3,8 +3,12 @@ package aes;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 
 
 public class AESMain{
@@ -21,11 +25,11 @@ public class AESMain{
 	 * 
 	 * Comparar velocidade com outras libs de java 
 	 */
-	
-	
-	
+
+
+
 	public static void main(String[] args){
-		
+
 		BlockCypherMode blockCypherMode = null;
 		CypherMode cypherMode = null;
 		String keyFilePath = null;
@@ -48,7 +52,7 @@ public class AESMain{
 				keyFilePath = args[i+1];
 				key = FileRW.readFile(keyFilePath);	
 			}
-			
+
 			// Key
 			if(args[i].equals("-k")){key = FileRW.convertToByteArray(args[i+1]);}
 
@@ -58,35 +62,103 @@ public class AESMain{
 			//Output file
 			if(args[i].equals("-o")){outputFilePath = args[i+1];}
 		}
-		
+
 		if (key == null || inputFilePath == null || outputFilePath == null || cypherMode == null){
 			System.out.println("Missing key || inputFilePath || outputFilePath || cypherMode");
 			System.out.println("key: " + key);
 			System.out.println("inputFilePath: " + inputFilePath);
 			System.out.println("outputFilePath: " + outputFilePath);
 			System.out.println("cypherMode: " + cypherMode);
-			
+
 			return;
 		}
 		if (blockCypherMode == null){
 			System.out.println("No Block Cypher Mode Selected, using ECB as default");
 			blockCypherMode = BlockCypherMode.ECB;
 		}
-		
-	
-		
+
+
+
+
+
+
+
+
+		//Stream method
+		try {
+			Long startTime = new Date().getTime();
+
+			AES_API aes_api = new AES_API();
+			aes_api.init(cypherMode, blockCypherMode, key);
+
+
+			InputStream is = new FileInputStream(inputFilePath);
+			OutputStream os = new FileOutputStream(outputFilePath);
+
+			//byte[] b = new byte[is.available()];
+			byte[] input = new byte[1048576]; // Read 1 Mb at a time
+			//is.read(b);
+			byte[] result;
+			byte[] tmp;
+			int nBytesRead;
+			while(true){
+				nBytesRead = is.read(input);
+				if (nBytesRead > 0){
+					System.out.println("Number of Bytes Read: " + nBytesRead);
+					tmp = new byte[nBytesRead];
+					System.arraycopy(input, 0, tmp, 0, nBytesRead);
+					result = aes_api.update(tmp);
+					
+					System.out.println("Size of result: "+ result.length + " VS nBytesRead:  " + nBytesRead );
+					
+					os.write(result, 0, result.length);
+					
+					//os.write(result, result.length); //Escrever;
+					result = null;
+					input = new byte[1048576];
+				}else{
+					is.close();
+					input = null;
+					break;
+				}
+			}
+			result = aes_api.doFinal(null);
+			System.out.println("Size of result: " + result.length );
+			os.write(result, 0, result.length); //Escrever;
+			result = null;
+
+			Long endTime = new Date().getTime();
+			System.out.println("Total time: " + (endTime - startTime));
+
+		}
+		catch (Exception e) {e.printStackTrace();}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		/**
 		 * ------------------------------------------------
 		 * Testing
 		 */
-	
-		
+		/*
+
 		AES_API aes_api_encrypt = new AES_API();
 		aes_api_encrypt.init(CypherMode.ENCRYPT, BlockCypherMode.ECB, key);
 		byte[] input = FileRW.readFile(inputFilePath);
 		long start = System.currentTimeMillis();
-		
-		
+
+
 		byte[] CypherText = aes_api_encrypt.doFinal(input);
 		/*
 		try {
@@ -95,13 +167,13 @@ public class AESMain{
 			System.out.println("CypherText was:");
 			System.out.println(new String(CypherText, "UTF-8"));
 		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
-		*/
-		
+		 */
+
 		//System.out.println("Going to decrypt");
-		
+		/*
 		AES_API aes_api_decrypt = new AES_API();
 		aes_api_decrypt.init(CypherMode.DECRYPT, BlockCypherMode.ECB, key);
-		
+
 		byte[] outputPlainText = aes_api_decrypt.doFinal(CypherText);
 		/*
 		try {
@@ -110,20 +182,21 @@ public class AESMain{
 			System.out.println("Output PlainText was:");
 			System.out.println(new String(outputPlainText, "UTF-8"));
 		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
-		*/
+		 */
+		/*
 		System.out.println("\n Finito \n");
-		
+
 		long end = System.currentTimeMillis();
 		System.out.println(end-start);
-		
+		 */
 		/*
 		 * ------------------------------------------------
 		 */
-		
+
 	}
 
-	
-	
+
+
 
 
 
