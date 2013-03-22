@@ -114,6 +114,8 @@ public class AESMain{
 			System.out.println(new String(outputPlainText, "UTF-8"));
 		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
 		
+		System.out.println("\n Finito \n");
+		
 		
 		/*
 		byte[] input = FileRW.readFile(inputFilePath);

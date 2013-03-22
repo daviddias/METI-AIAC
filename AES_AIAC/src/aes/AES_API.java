@@ -1,5 +1,7 @@
 package aes;
 
+import java.io.UnsupportedEncodingException;
+
 
 public class AES_API {
 
@@ -8,8 +10,10 @@ public class AES_API {
 	BlockCypherMode blockCypherMode;
 
 	byte[] key; //128, 192 or 256 bit
-	byte[] cypherBuffer; //Used to hold a incomplete block for doFinal
 
+
+	byte[] blocBuffer = null; //holds a bloc in Buffer
+	byte[] leftoversBuffer = null; //holds the bytes that were unable to fill a full bloc
 
 	public static int Nb, Nk, Nr;
 	public static byte[][] w;
@@ -101,11 +105,11 @@ public class AES_API {
 		this.cypherMode = cypherMode;
 		this.blockCypherMode = blockCypherMode;
 		this.key = key;
-		
+
 		Nb = 4;
 		Nk = key.length/4;
 		Nr = Nk + 6;
-		
+
 		w = generateSubkeys(key);
 
 	}
@@ -131,53 +135,111 @@ public class AES_API {
 	 * @return
 	 */
 	public byte[] update(byte[] input){
-//		Nb = 4;
-//		Nk = key.length/4;
-//		Nr = Nk + 6;
-//
-//		byte[] bloc = new byte[16];
-//		
-//		if(cypherMode == CypherMode.ENCRYPT){
-//			int nBlocks = input.length/16;
-//			int sizeOfLastBlock = input.length%16;
-//			byte[] result = new byte[nBlocks*16];
-//			
-//			if (sizeOfLastBlock > 0){ // Put in Buffer the bytes that don't make a block
-//				cypherBuffer = new byte[sizeOfLastBlock];
-//				System.arraycopy(input, input.length/16 * 16  , cypherBuffer, 0, sizeOfLastBlock);
-//			} else {
-//				cypherBuffer = null; // Last Block will be only padding
-//			}
-//			
-//			if(nBlocks == 0){ // No blocks to be cyphered by update
-//				return null;
-//			}
-//			
-//			for(int i=0;i<nBlocks;i++){
-//				System.arraycopy(input, i*16, bloc, 0, bloc.length);
-//				bloc = encryptBloc(bloc);
-//				System.arraycopy(bloc, 0, result, i*16, bloc.length);
-//			}
-//			return result;
-//		}
-//		
-//	
-//		
-//		
-//		if(cypherMode == CypherMode.DECRYPT){
-//			int nBlocks = input.length/16;
-//			byte[] result = new byte[nBlocks*16];
-//			
-//			for(int i=0;i<nBlocks;i++){
-//				System.arraycopy(input, i*16, bloc, 0, bloc.length);
-//				bloc = decryptBloc(bloc);
-//				System.arraycopy(bloc, 0, result, i*16, bloc.length);
-//			}
-//			return result;
-//			
-//			
-//		}
-//		System.out.println("Never gets here: update");
+		if(cypherMode == CypherMode.ENCRYPT){
+			// 1 Há leftovers? Junta ao Input
+			// 2 Cifrar todos os blocos inteiros
+			// 3 Guardar o último bloco cifrado
+			// 4 Se Houver Leftovers, guardar
+			// 5 Retorna o que foi cifrado
+
+			if(input == null){
+				System.out.println("Input can't be null");
+				return null;
+			}
+
+			byte[] tmp;
+
+			// 1 Há leftovers? Junta ao Input
+			if(leftoversBuffer != null){
+				tmp = new byte[leftoversBuffer.length + input.length];
+				System.arraycopy(leftoversBuffer, 0, tmp, 0, leftoversBuffer.length);
+				System.arraycopy(input, 0, tmp, leftoversBuffer.length, input.length);
+				leftoversBuffer = null; //Depois de consumir 
+			}else{ tmp = input; }
+
+			
+			//2 Cifrar todos os blocos inteiros
+			int nFullBlocks = tmp.length/16;
+			int leftOversSize = tmp.length%16;
+			byte[] result = new byte[nFullBlocks*16];
+			byte[] bloc = new byte[16];
+			
+			int i = 0;
+			for(i=0;i<nFullBlocks;i++){
+				System.arraycopy(tmp, i*16, bloc, 0, bloc.length);
+				bloc = encryptBloc(bloc);
+				System.arraycopy(bloc, 0, result, i*16, bloc.length);
+			}
+			
+			// 3 Guardar o último bloco cifrado
+			blocBuffer = bloc; // Vai dar jeito para o CBC
+			
+			// 4 Se houver leftovers, guardar
+			if(leftOversSize>0){
+				leftoversBuffer = new byte[leftOversSize];
+				System.arraycopy(tmp, i*16, leftoversBuffer, 0, leftOversSize);
+			}
+
+			// 5 retorna o que foi cifrado
+			return result;
+		}
+		
+		if(cypherMode == CypherMode.DECRYPT){
+			// 1 Há bloco por descifrar e LeftOvers? Junta ao Input
+			// 2 Descifra todos os blocos inteiros menos o último
+			// 3 Guarda o último bloco ainda por descrifrar
+			// 4 Se houver leftovers, guarda
+			// 5 Retorna o que foi descifrado
+			
+			int blocBufferSize = 0;
+			int leftoversBufferSize = 0;
+			if(blocBuffer != null){
+				blocBufferSize = blocBuffer.length;
+			}
+			if(leftoversBuffer != null){
+				leftoversBufferSize = leftoversBuffer.length;
+			}
+			
+			byte[] tmp = new byte[blocBufferSize + leftoversBufferSize + input.length];;
+			
+			// 1 Há bloco por descifrar e LeftOvers? Junta ao Input
+			if(blocBuffer != null){
+				System.arraycopy(blocBuffer, 0, tmp, 0, blocBufferSize);
+				blocBuffer = null;
+			}
+			
+			if(leftoversBuffer != null){
+				System.arraycopy(leftoversBuffer, 0, tmp, blocBufferSize, leftoversBufferSize);
+				leftoversBuffer = null; //Depois de consumir 
+			}
+			System.arraycopy(input, 0, tmp, blocBufferSize + leftoversBufferSize, input.length);
+			
+			// 2 Descifra todos os blocos inteiros menos o último
+			int nFullBlocks = tmp.length/16;
+			int leftOversSize = tmp.length%16;
+			byte[] result = new byte[tmp.length];
+			byte[] bloc = new byte[16];
+			
+			int i = 0;
+			for(i=0;i<nFullBlocks-1;i++){//Todos menos o último
+				System.arraycopy(tmp, i*16, bloc, 0, bloc.length);
+				bloc = decryptBloc(bloc);
+				System.arraycopy(bloc, 0, result, i*16, bloc.length);
+			}
+			// 3 Guarda o último bloco ainda por descifrar
+			System.arraycopy(tmp, i*16, bloc, 0, bloc.length); // ùltimo
+			blocBuffer = bloc;
+			
+			// 4 Se houver leftovers, guardar
+			if(leftOversSize>0){
+				leftoversBuffer = new byte[leftOversSize];
+				System.arraycopy(tmp, (i*16) + 1, leftoversBuffer, 0, leftOversSize); // o +1 é porque tivemos de guardar o último bloco por cifrar
+			}
+			return result;
+			
+		}
+
+		System.out.println("Never gets here: update");
 		return null;
 	}
 
@@ -191,11 +253,11 @@ public class AES_API {
 	 * @return
 	 */
 	public byte[] update(byte[] input, int inputlen){
-		return input;
+		return update(input);
 	}
 
 
-	
+
 
 
 	/**
@@ -206,80 +268,71 @@ public class AES_API {
 	 * @return
 	 */
 	public byte[] doFinal(byte[] input){
-		
-		// Multi
-		
-		
-		// Single Part Operation
-		
+
 		if(cypherMode == CypherMode.ENCRYPT){
+			// 1 Chama o update com o input (o update já trata de juntar os leftovers que havia)
+			// 2 Continua a haver leftovers? Adiciona padding e cifra			
 			
-			int lenght=0;
-			byte[] padding = new byte[1];
-			int i;
-			lenght = 16 - input.length % 16;				
-			padding = new byte[lenght];					
-					
-			//Fill the padding =)
-			for (i = 0; i < lenght; i++) {			
-				padding[i] = (byte)lenght;
-			}		
-
-			byte[] tmp = new byte[input.length + lenght];		
-			byte[] bloc = new byte[16];							
+			// 1 Chama o update com o input (o update já trata de juntar os leftovers que havia)			
+			byte[] tmp = update(input);
+			//System.out.println("TAMANHO DO TEMP: " + tmp.length);
 			
-			int count = 0;
-
-			for (i = 0; i < input.length + lenght; i++) {
-				
-				// Cada vez que copia 16 bytes fz isto
-				if (i > 0 && i % 16 == 0) {
-					bloc = encryptBloc(bloc);
-					// Copia para o tmp o bloc e meteo apartir da casa i-16
-					System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-				}
-				
-				// Vai copiar 1 byte de cada vez
-				if (i < input.length)
-					bloc[i % 16] = input[i];
-				
-				// Se não houver mais bytes copia o padding
-				else{														
-					bloc[i % 16] = padding[count % 16];
-					count++;
-				}
-			}
-			if(bloc.length == 16){
-				bloc = encryptBloc(bloc);
-				System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
+			
+			// 2 Continua a haver leftovers? Adiciona padding e cifra			
+			byte[] lastBlock = new byte[16];
+			int leftoversBufferSize = 0;
+			if(leftoversBuffer != null){
+				leftoversBufferSize = leftoversBuffer.length;
 			}
 			
-			return tmp;
-			
-			
-		}
-		if(cypherMode == CypherMode.DECRYPT){
-			int i;
-			byte[] tmp = new byte[input.length];
-			byte[] bloc = new byte[16];
-
-			for (i = 0; i < input.length; i++) {
-				if (i > 0 && i % 16 == 0) {
-					bloc = decryptBloc(bloc);
-					System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
+			if(leftoversBufferSize > 0){ // f
+				int paddingLength = 16 - leftoversBufferSize%16;
+				//System.out.println("Cypher Padding Length " + paddingLength);
+				
+				System.arraycopy(leftoversBuffer, 0, lastBlock, 0, leftoversBufferSize);
+				leftoversBuffer = null;
+				for(int i = 0; i< paddingLength;i++){
+					lastBlock[15-i] = (byte) paddingLength;
 				}
-				if (i < input.length)
-					bloc[i % 16] = input[i];
+				
+			}else{
+				int paddingLength = 16;
+				for (int i=0 ; i< paddingLength;i++){
+					lastBlock[i] = (byte) paddingLength;
+				}
 			}
-			bloc = decryptBloc(bloc);
-			System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-
-			tmp = deletePadding(tmp);
-
-			return tmp;
+			lastBlock = encryptBloc(lastBlock);
+			
+			byte[] result = new byte[tmp.length + lastBlock.length];
+			System.arraycopy(tmp, 0, result, 0, tmp.length);
+			System.arraycopy(lastBlock, 0, result, tmp.length, lastBlock.length);			
+			
+			return result;			
 		}
 		
-		System.out.println("Never Gets Here: doFinal");
+		
+		if(cypherMode == CypherMode.DECRYPT){
+			// 1 Chama o Update com o Input
+			// 2 Descifra o último bloco e tira o Padding(neste caso é impossivel haver ainda leftovers) 
+			
+			// 1 Chama o Update com o Input
+			byte[] tmp = update(input);
+			
+			// 2 Descifra o último bloco e tira o Padding(neste caso é impossivel haver ainda leftovers) 
+			byte[] bloc = new byte[16];
+			bloc = decryptBloc(blocBuffer);
+			
+			blocBuffer = null;
+			int paddingLength = (int) bloc[15];
+			
+			byte[] result = new byte[tmp.length + 16 - paddingLength];
+			System.arraycopy(tmp, 0, result, 0, tmp.length);
+			System.arraycopy(bloc, 0, result, tmp.length, 16 - paddingLength);
+			return result;
+
+		}
+
+		System.out.println("Never gets here: update");
 		return null;
 	}
 
@@ -518,113 +571,9 @@ public class AES_API {
 	}
 
 
-	private static byte[] encrypt(byte[] in,byte[] key){
-
-		Nb = 4;
-		Nk = key.length/4;
-		Nr = Nk + 6;
-
-
-		int lenght=0;
-		byte[] padding = new byte[1];
-		int i;
-		lenght = 16 - in.length % 16;				
-		padding = new byte[lenght];					
-		//		padding[0] = (byte) 0x80;
-
-
-		//Fill the padding =)
-		for (i = 0; i < lenght; i++) {			
-			//padding[i] = 0;
-			padding[i] = (byte)lenght;
-		}
-
-
-		//for (i = 1; i < lenght; i++)				
-		//	padding[i] = 0;
-
-		byte[] tmp = new byte[in.length + lenght];		
-		byte[] bloc = new byte[16];							
-
-
-		w = generateSubkeys(key);
-
-		int count = 0;
-
-		for (i = 0; i < in.length + lenght; i++) {
-
-			// Cada vez que copia 16 bytes fz isto
-			if (i > 0 && i % 16 == 0) {
-				bloc = encryptBloc(bloc);
-				// Copia para o tmp o bloc e meteo apartir da casa i-16
-				System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-			}
-
-			// Vai copiar 1 byte de cada vez
-			if (i < in.length)
-				bloc[i % 16] = in[i];
-
-			// Se não houver mais bytes copia o padding
-			else{														
-				bloc[i % 16] = padding[count % 16];
-				count++;
-			}
-		}
-		if(bloc.length == 16){
-			bloc = encryptBloc(bloc);
-			System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-		}
-
-		return tmp;
-	}
-
-
-
-
-	private static byte[] decrypt(byte[] in,byte[] key){
-		int i;
-		byte[] tmp = new byte[in.length];
-		byte[] bloc = new byte[16];
-
-
-		Nb = 4;
-		Nk = key.length/4;
-		Nr = Nk + 6;
-		w = generateSubkeys(key);
-
-
-		for (i = 0; i < in.length; i++) {
-			if (i > 0 && i % 16 == 0) {
-				bloc = decryptBloc(bloc);
-				System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-			}
-			if (i < in.length)
-				bloc[i % 16] = in[i];
-		}
-		bloc = decryptBloc(bloc);
-		System.arraycopy(bloc, 0, tmp, i - 16, bloc.length);
-
-
-		tmp = deletePadding(tmp);
-
-		return tmp;
-	}
 
 
 	private static byte[] deletePadding(byte[] input) {
-		//		int count = 0;
-		//
-		//		int i = input.length - 1;
-		//		while (input[i] == 0) {
-		//			count++;
-		//			i--;
-		//		}
-		//
-		//		byte[] tmp = new byte[input.length - count - 1];
-		//		System.arraycopy(input, 0, tmp, 0, tmp.length);
-		//		return tmp;
-
-
 
 		// Remove padding of numbers
 		int count = 0; // Num de bytes a serem removidos
@@ -676,34 +625,6 @@ public class AES_API {
 
 
 
-
-	/**
-	 * FOR TESTING PURPOSES ---------------------------------------------------------------------------
-	 */
-//	public void test(){
-//		System.out.println("Plaintext is:");
-//		System.out.println(input);
-//		try {
-//			System.out.println(new String(input, "UTF-8"));
-//		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
-//
-//		System.out.println("Testing ECB Encryption");
-//		byte[] cypheredText = AESTAKENFROMTHEWEB.encrypt(input,key);
-//		System.out.println(cypheredText);
-//		System.out.println("Encryption Complete");
-//
-//		System.out.println("Testing ECB Decryption");
-//		byte[] plainText = AESTAKENFROMTHEWEB.decrypt(cypheredText,key);
-//		System.out.println(plainText);
-//		try {
-//			System.out.println(new String(plainText, "UTF-8"));
-//		} catch (UnsupportedEncodingException e) {System.out.println("FUCK");}
-//		System.out.println("Decryption Complete");
-//	}
-
-	/*
-	 * -----------------------------------------------------------------------------------------------
-	 */
 
 }
 
