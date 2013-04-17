@@ -1,0 +1,11 @@
+#Crapy mac files
+.DS_Store
+
+# card pubkey
+pubkey
+
+# classes
+.class
+
+#jars
+.jar
