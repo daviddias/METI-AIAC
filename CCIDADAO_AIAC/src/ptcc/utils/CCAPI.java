@@ -28,7 +28,6 @@ import sun.security.pkcs11.wrapper.PKCS11Exception;
 /**
  * This class contains the API to use Portuguese Citizen Card Connect to Card Reader
  * 
- * 
  * @author DavidDias
  *
  */
@@ -75,8 +74,6 @@ public class CCAPI {
 	}
 
 
-
-
 	//returns the p11_session
 	public static long PKCS11SessionInit() throws IOException, PKCS11Exception {
 		String osName = System.getProperty("os.name");
@@ -114,9 +111,7 @@ public class CCAPI {
 		return p11_session;
 	}
 
-
 	public static byte[] SignNounce(long p11_session, byte[] nounce) throws PKCS11Exception, IOException {
-
 		CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[1];
 		attributes[0] = new CK_ATTRIBUTE();
 		attributes[0].type = PKCS11Constants.CKA_LABEL;
@@ -155,8 +150,6 @@ public class CCAPI {
 		return verificationResult;
 	}
 
-
-
 	/**
 	 * ------------------------------------------------------------------------------------
 	 * 					Testing Methods to check if everything is Ok with Card
@@ -185,10 +178,7 @@ public class CCAPI {
 			logger.debug("\n Voilá! \n");
 
 			pteid.Exit(pteid.PTEID_EXIT_LEAVE_CARD);
-		} catch (Exception e) {
-			e.printStackTrace();
-			
-		}
+		} catch (Exception e) { e.printStackTrace();}
 	}
 
 

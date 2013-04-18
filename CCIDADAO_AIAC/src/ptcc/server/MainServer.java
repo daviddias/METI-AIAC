@@ -19,7 +19,6 @@ import pteidlib.PteidException;
 public class MainServer {
 	static Logger logger = Logger.getLogger(MainServer.class);
 
-
 	public static String port = "8090";
 	public static String keyPubFilePath; //= "pubKey"; // default path
 
@@ -45,11 +44,5 @@ public class MainServer {
 		
 		AuthService as = new AuthService(keyPubFilePath, port);
 		as.run();
-		
-
-		
-		
-
-
 	}
 }

@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
  */
 public class MainClient {
 
-
 	public static String port = "8080";
 
 	public static void main(String[] args){
@@ -26,10 +25,5 @@ public class MainClient {
 
 		AuthAgent aa = new AuthAgent(port);
 		aa.run();
-
-		
-		
-
-
 	}
 }

@@ -22,15 +22,12 @@ public class AuthAgent {
 	InputStream inputStream;
 	OutputStream outputStream;
 
-	public AuthAgent(String _port){
-		port = _port;
-	}
+	public AuthAgent(String _port){ port = _port; }
 
 	public void run(){
 		try { clientSocket = new Socket("localhost",Integer.parseInt("8090"));//Aqui metemos quem queremos contactar 
 		} catch (IOException e) { logger.debug("Could not create a Socket with Server on port: 8090 "); }
 		logger.debug("Client Started at port " + port);
-
 
 		try {
 			// Auth Request
@@ -43,7 +40,6 @@ public class AuthAgent {
 			outputStream.write(Operations.AUTH_REQUEST.toString().getBytes());
 
 			// Nounce Receive
-
 			while(inputStream.available() == 0){
 				logger.debug("Still Waiting");
 			}
@@ -60,9 +56,7 @@ public class AuthAgent {
 			// ---------------------------------------
 
 
-
 			// Nounce Signed
-
 			buffer = new byte[512];
 			buffer[0] = Operations.NOUNCE_SIGNED.toString().getBytes()[0];
 			System.arraycopy(nounce, 0, buffer, 1, 36);
@@ -70,7 +64,7 @@ public class AuthAgent {
 			
 			try { clientSocket = new Socket("localhost",Integer.parseInt("8090"));//Aqui metemos quem queremos contactar 
 			} catch (IOException e) { logger.debug("Could not create a Socket with Server on port: 8090 "); }
-			logger.debug("New connection at port " + port);
+			logger.debug("New Socket Open for Nounce Signed " + port);
 
 			// Auth Request 
 			inputStream = clientSocket.getInputStream();
@@ -81,20 +75,12 @@ public class AuthAgent {
 			outputStream.write(buffer);
 
 			// Confirmation Receive
-
 			buffer = new byte[512];
 			inputStream.read(buffer);
 			System.out.println(new String(buffer, "UTF-8"));
-
-
-
 		} 
 		catch (IOException e) { e.printStackTrace(); } 
 		catch (PKCS11Exception e) { e.printStackTrace(); } 
 		catch (PteidException e) { e.printStackTrace(); }
-
-
-
 	}
-
 }
