@@ -16,26 +16,19 @@ public class Convert {
 	//To Unicode & To Base64
 
 	
-	
-	public static byte[] toUTF8Bytes(String s){
-		try { return s.getBytes("UTF8"); } catch (UnsupportedEncodingException e) { e.printStackTrace(); }
-		logger.debug("could not convert to UTF8 Bytes");
-		return null;
+	public static byte[] encodeToBase64(String text){
+		return  Base64.encodeBase64(text.getBytes());   
+		//return Base64.encodeBase64(b);
 	}
 	
-	public static String toUTF8String(byte[] b){
-		try { return new String(b, "UTF8"); } catch (UnsupportedEncodingException e) { e.printStackTrace(); }
-		logger.debug("could not convert to UTF8 String");
-		return null;
+	public static String decodeFromBase64(byte[] b){
+	    byte[] decoded = Base64.decodeBase64(b);  
+	    return new String(decoded);
 	}
 	
-	public static byte[] encodeToBase64(byte[] b){
-		return Base64.encodeBase64(b);
-	}
-	
-	public static byte[] decodeFromBase64(byte[] b){
-		return Base64.decodeBase64(b); 
-	}
+
+
+
 	
 }
 

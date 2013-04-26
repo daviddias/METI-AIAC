@@ -134,7 +134,7 @@ public class CCAPI {
 		//Sign the data
 		byte[] signature = pkcs11.C_Sign(p11_session, nounce);
 
-		logger.debug("The Nounce is Signed =)");
+		logger.debug("Signature Complete =)");
 		return signature;
 	}
 

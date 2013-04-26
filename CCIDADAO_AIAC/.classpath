@@ -3,6 +3,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/log4j.jar"/>
-	<classpathentry kind="lib" path="/Developer/pteid/java/pteidlibj.jar"/>
+	<classpathentry kind="lib" path="lib/pteidlibj.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
