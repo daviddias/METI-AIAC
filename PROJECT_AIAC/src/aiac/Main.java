@@ -20,6 +20,9 @@ import com.sun.org.apache.bcel.internal.classfile.Signature;
 
 import pteidlib.PteidException;
 import pteidlib.pteid;
+import aiac.aesJAVA.AES_API;
+import aiac.aesJAVA.BlockCypherMode;
+import aiac.aesJAVA.CypherMode;
 import aiac.ptcc.*;
 import aiac.tools.Convert;
 import aiac.tools.ReadWrite;
@@ -65,7 +68,7 @@ public class Main {
 				String text = ReadWrite.readFileToString(pathOfFile);
 				byte[] textInBase64 = Convert.encodeToBase64(text);
 
-				
+
 				// 2nd Cycle - Cause you can't put all the thing into heap
 				// Hash //the PKCS11 Library already hashes the content , so no need
 
@@ -76,65 +79,65 @@ public class Main {
 
 				// 2. Sign	
 
-//				CCAPI.initialize();
-//				//byte[] nounce = Utils.Generate128bitNounce();
-//				long p11_session = CCAPI.PKCS11SessionInit();
-//				byte[] signature = CCAPI.SignNounce(p11_session,textInBase64);
-//				//boolean valide = CCAPI.validateSig(CCAPI.getCertificateX509().getPublicKey(),signature,textInBase64);
-//				//logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
-//
-//				pteid.Exit(pteid.PTEID_EXIT_LEAVE_CARD);
-//
-//
-//				// 3. Concat everything [signature + timestamp + base64]
-//				byte[] result = new byte[signature.length + textInBase64.length];
-//				System.arraycopy(signature, 0, result, 0, 128);
-//				System.arraycopy(textInBase64, 0, result, 128, textInBase64.length);
-				
+				CCAPI.initialize();
+				//byte[] nounce = Utils.Generate128bitNounce();
+				long p11_session = CCAPI.PKCS11SessionInit();
+				byte[] signature = CCAPI.SignNounce(p11_session,textInBase64);
+				//boolean valide = CCAPI.validateSig(CCAPI.getCertificateX509().getPublicKey(),signature,textInBase64);
+				//logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
+
+				pteid.Exit(pteid.PTEID_EXIT_LEAVE_CARD);
+
+
+
+				// 3. Concat everything [signature + timestamp + base64]
+				byte[] result = new byte[signature.length + textInBase64.length];
+				System.arraycopy(signature, 0, result, 0, 128);
+				System.arraycopy(textInBase64, 0, result, 128, textInBase64.length);
+
+
 				// 4. Cypher - Cause you can't put all the thing into heap
 				if(useAES){
-					//TODO
+					AES_API aes_api = new AES_API();
+					aes_api.init(CypherMode.ENCRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
+					result = aes_api.doFinal(result);
 				}
 
-				
-				// 5. ZIP
+
+
+				// 5. Write to File - "OUTPUT-SEND"
+				File file = new File ("sandboxFolder/OUTPUT-TO-SEND");
+				FileOutputStream file_output = new FileOutputStream (file);
+				DataOutputStream data_out = new DataOutputStream (file_output);
+				data_out.write(result);
+				file_output.close();
+
+
+				// 7. ZIP
 				if (zip){
-					FileInputStream file_input = new FileInputStream(pathOfFile);
+					FileInputStream file_input = new FileInputStream("sandboxFolder/OUTPUT-TO-SEND");
 					ZipOutputStream file_out = new ZipOutputStream(new FileOutputStream("sandboxFolder/OUTPUT-TO-SEND.zip"));
-					
-					file_out.putNextEntry(new ZipEntry("OUTPUT-TO-SEND-ZIP.txt")); 
-
-		            byte[] buffer = new byte[1024];
-
-		            int count;
-		            
-		            while ((count = file_input.read(buffer)) > 0) {
-			         file_out.write(buffer, 0, count);
-			        }
-		            file_out.close();
-			        file_input.close();
+					file_out.putNextEntry(new ZipEntry("OUTPUT-TO-SEND")); //this name is the is the name of unziped file
+					byte[] buffer = new byte[4096];
+					int count;
+					while ((count = file_input.read(buffer)) > 0) {
+						file_out.write(buffer, 0, count);
+					}
+					file_out.close();
+					file_input.close();
 				}
-				
-				// 6. Write to File - "OUTPUT-SEND"
-//				File file = new File ("sandboxFolder/OUTPUT-TO-SEND");
-//				FileOutputStream file_output = new FileOutputStream (file);
-//				DataOutputStream data_out = new DataOutputStream (file_output);
-//				data_out.write(result);
-//				file_output.close();
-				
-				
-				
+
 				//Test to check if still validating 
 				/*
 				byte[] sign = new byte[128];
 				byte[] base64 = new byte[result.length-128];
 				System.arraycopy(result, 0, sign, 0, 128);
 				System.arraycopy(result, 128, base64, 0, result.length-128);
-				
+
 				boolean valide = CCAPI.validateSig(CCAPI.getCertificateX509().getPublicKey(),sign,base64);
 				logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
-				*/
-				
+				 */
+
 
 			} catch (Exception e) { e.printStackTrace();}
 		}
@@ -142,48 +145,59 @@ public class Main {
 
 		if(receive){
 			try {
-			// 1. Open the file
-			File file = new File(pathOfFile);
-			FileInputStream file_input;
-			file_input = new FileInputStream (file);
-			DataInputStream data_in    = new DataInputStream (file_input);
-			byte[] data = new byte[(int)file.length()];
-			data_in.read(data);
-			data_in.close();
-			
-			// 2. Unzip
-			if (zip){
-				String INPUT_ZIP_FILE = "sandboxFolder/OUTPUT-TO-SEND.zip";
-				String OUTPUT_FOLDER = "/Users/fabiodomingos/Desktop";
-				
-				unzip unZip = new unzip();
-			  	unZip.unZipIt(INPUT_ZIP_FILE,OUTPUT_FOLDER);
-			}
-			
-			// 3. Decypher
-			if(useAES){
-				//TODO
-			}
-			
-			// 4. Validate Signature
-//			byte[] sign = new byte[128];
-//			byte[] base64 = new byte[data.length-128];
-//			
-//			System.arraycopy(data, 0, sign, 0, 128);
-//			System.arraycopy(data, 128, base64, 0, data.length-128);
-//			boolean valide = CCAPI.validateSig(CCAPI.getCertificateX509().getPublicKey(),sign,base64);
-//			logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
-//		
-			
-			
-			// 5. Save to file "OUTPUT-RECEIVED"
+				// 1. Unzip
+				if (zip){
+					System.out.println("DO I ENTER HERE?");
+					String INPUT_ZIP_FILE = pathOfFile;
+					String OUTPUT_FOLDER = "sandboxFolder/";
+					pathOfFile = "sandboxFolder/OUTPUT-TO-SEND"; //this is the name specified by ZipEntry
+					unzip unZip = new unzip();
+					unZip.unZipIt(INPUT_ZIP_FILE,OUTPUT_FOLDER);
+				}			
 
-			
-			
-			
+
+				// 2. Open the file
+				File file = new File(pathOfFile);
+				FileInputStream file_input;
+				file_input = new FileInputStream (file);
+				DataInputStream data_in   = new DataInputStream (file_input);
+				byte[] data = new byte[(int)file.length()];
+				data_in.read(data);
+				data_in.close();
+
+
+				// 3. Decypher
+				if(useAES){
+					AES_API aes_api = new AES_API();
+					aes_api.init(CypherMode.DECRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
+					data = aes_api.doFinal(data);
+				}
+
+				
+				
+				// 4. Validate Signature
+				byte[] sign = new byte[128];
+				byte[] base64 = new byte[data.length-128];
+
+				System.arraycopy(data, 0, sign, 0, 128);
+				System.arraycopy(data, 128, base64, 0, data.length-128);
+				boolean valide = CCAPI.validateSig(CCAPI.getCertificateX509().getPublicKey(),sign,base64);
+				logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
+
+
+				// 5. Save to file "OUTPUT-RECEIVED"
+				File fileFinal = new File ("sandboxFolder/OUTPUT-TO-RECEIVED");
+				FileOutputStream file_output = new FileOutputStream (fileFinal);
+				DataOutputStream data_out = new DataOutputStream (file_output);
+				data_out.write(base64);
+				file_output.close();
+
+
+
+
 			} catch (FileNotFoundException e) { e.printStackTrace();
 			} catch (IOException e) { e.printStackTrace();
-			} //catch (PteidException e) { e.printStackTrace(); }	
+			} catch (PteidException e) { e.printStackTrace(); }	
 		}
 
 	}
