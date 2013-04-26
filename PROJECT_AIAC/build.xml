@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="PROJECT_AIAC" default="default" basedir=".">
+    <description>Builds, tests, and runs the project CCIDADAO_AIAC.</description>
+<!--
+    <path id="classpath">
+        <fileset dir="lib" includes="**/*.jar"/>
+    </path>
+
+
+    <target name="prepare">
+        <echo message="Preparing the project for build (making dirs)..." />
+        <delete dir="build"/>
+        <mkdir dir="build" />
+        <delete dir="dist"/>
+        <mkdir dir="dist" />  
+    </target>
+
+
+
+    <target name="compile" depends="prepare">
+        <echo message="Compiling classes" />
+        <javac srcdir="src" destdir="build" classpathref="classpath"/>
+    </target>
+
+    <target name="jarCCAPI" depends="compile">
+        <echo message="Creating jar file" /> 
+        <jar destfile="dist/PROJECT_AIAC.jar" basedir="build">
+
+        </jar>
+    </target>   
+
+    <target name="runCCAPI" depends="jarCCAPI">
+            <java fork="true" classname="ptcc.utils.CCAPI">
+              <classpath>
+                <path refid="classpath"/>
+                <path location="dist/PROJECT_AIAC.jar"/>
+              </classpath>
+            </java>
+    </target>
+  -->
+
+</project>
