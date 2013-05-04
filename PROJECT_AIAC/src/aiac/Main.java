@@ -1,33 +1,27 @@
 package aiac;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-
-import com.sun.org.apache.bcel.internal.classfile.Signature;
 
 import pteidlib.PteidException;
 import pteidlib.pteid;
 import aiac.aesJAVA.AES_API;
 import aiac.aesJAVA.BlockCypherMode;
 import aiac.aesJAVA.CypherMode;
-import aiac.ptcc.*;
+import aiac.ptcc.CCAPI;
 import aiac.tools.Convert;
 import aiac.tools.ReadWrite;
-
-import aiac.zip.unzip;;
+import aiac.zip.unzip;
 
 public class Main {
 
@@ -95,29 +89,19 @@ public class Main {
 				System.arraycopy(signature, 0, result, 0, 128);
 				System.arraycopy(textInBase64, 0, result, 128, textInBase64.length);
 
+				
 
-				// 4. Cypher - Cause you can't put all the thing into heap
-				if(useAES){
-					AES_API aes_api = new AES_API();
-					aes_api.init(CypherMode.ENCRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
-					result = aes_api.doFinal(result);
-				}
-
-
-
-				// 5. Write to File - "OUTPUT-SEND"
-				File file = new File ("sandboxFolder/OUTPUT-TO-SEND");
-				FileOutputStream file_output = new FileOutputStream (file);
-				DataOutputStream data_out = new DataOutputStream (file_output);
-				data_out.write(result);
-				file_output.close();
-
-
-				// 7. ZIP
-				if (zip){
-					FileInputStream file_input = new FileInputStream("sandboxFolder/OUTPUT-TO-SEND");
-					ZipOutputStream file_out = new ZipOutputStream(new FileOutputStream("sandboxFolder/OUTPUT-TO-SEND.zip"));
-					file_out.putNextEntry(new ZipEntry("OUTPUT-TO-SEND")); //this name is the is the name of unziped file
+				// 4. ZIP (Save file, Zip, Read file Again)
+				if (zip){					
+					File file = new File ("sandboxFolder/tempZIPING");
+					FileOutputStream file_output = new FileOutputStream (file);
+					DataOutputStream data_out = new DataOutputStream (file_output);
+					data_out.write(result);
+					file_output.close();
+					
+					FileInputStream file_input = new FileInputStream("sandboxFolder/tempZIPING");
+					ZipOutputStream file_out = new ZipOutputStream(new FileOutputStream("sandboxFolder/temp.zip"));
+					file_out.putNextEntry(new ZipEntry("ZIPY")); //this name is the is the name of unziped file
 					byte[] buffer = new byte[4096];
 					int count;
 					while ((count = file_input.read(buffer)) > 0) {
@@ -125,7 +109,26 @@ public class Main {
 					}
 					file_out.close();
 					file_input.close();
+					
+					result = ReadWrite.ReadFileToByteArray("sandboxFolder/temp.zip");			
+				}				
+							
+
+				// 5. Cypher - Cause you can't put all the thing into heap
+				if(useAES){
+					AES_API aes_api = new AES_API();
+					aes_api.init(CypherMode.ENCRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
+					result = aes_api.doFinal(result);
 				}
+
+				// 6. Write to File - "OUTPUT-SEND"
+				File file = new File ("sandboxFolder/OUTPUT-TO-SEND");
+				FileOutputStream file_output = new FileOutputStream (file);
+				DataOutputStream data_out = new DataOutputStream (file_output);
+				data_out.write(result);
+				file_output.close();
+
+
 
 				//Test to check if still validating 
 				/*
@@ -137,26 +140,13 @@ public class Main {
 				boolean valide = CCAPI.validateSig(CCAPI.getCertificateX509().getPublicKey(),sign,base64);
 				logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
 				 */
-
-
 			} catch (Exception e) { e.printStackTrace();}
 		}
 
 
 		if(receive){
 			try {
-				// 1. Unzip
-				if (zip){
-					System.out.println("DO I ENTER HERE?");
-					String INPUT_ZIP_FILE = pathOfFile;
-					String OUTPUT_FOLDER = "sandboxFolder/";
-					pathOfFile = "sandboxFolder/OUTPUT-TO-SEND"; //this is the name specified by ZipEntry
-					unzip unZip = new unzip();
-					unZip.unZipIt(INPUT_ZIP_FILE,OUTPUT_FOLDER);
-				}			
-
-
-				// 2. Open the file
+				// 1. Open the file
 				File file = new File(pathOfFile);
 				FileInputStream file_input;
 				file_input = new FileInputStream (file);
@@ -166,13 +156,30 @@ public class Main {
 				data_in.close();
 
 
-				// 3. Decypher
+				// 2. Decypher
 				if(useAES){
 					AES_API aes_api = new AES_API();
 					aes_api.init(CypherMode.DECRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
 					data = aes_api.doFinal(data);
 				}
 
+				// 3. Unzip (write the file, unzip, read again)
+				if (zip){
+					File fileFinal = new File ("sandboxFolder/tempUNZIPING");
+					FileOutputStream file_output = new FileOutputStream (fileFinal);
+					DataOutputStream data_out = new DataOutputStream (file_output);
+					data_out.write(data);
+					file_output.close();
+					
+					String INPUT_ZIP_FILE = "sandboxFolder/tempUNZIPING";
+					String OUTPUT_FOLDER = "sandboxFolder/";
+					String pathOfFileUnzipped = "sandboxFolder/ZIPY"; //this is the name specified by ZipEntry
+					unzip unZip = new unzip();
+					unZip.unZipIt(INPUT_ZIP_FILE,OUTPUT_FOLDER);
+					data = ReadWrite.ReadFileToByteArray(pathOfFileUnzipped);					
+				}	
+				
+				
 				
 				
 				// 4. Validate Signature
@@ -189,7 +196,8 @@ public class Main {
 				File fileFinal = new File ("sandboxFolder/OUTPUT-TO-RECEIVED");
 				FileOutputStream file_output = new FileOutputStream (fileFinal);
 				DataOutputStream data_out = new DataOutputStream (file_output);
-				data_out.write(base64);
+				String buf = Convert.decodeFromBase64(base64);// + "\n";
+				data_out.write(buf.getBytes());
 				file_output.close();
 
 
