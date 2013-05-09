@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
+import aiac.tools.Convert;
 import aiac.tools.ReadWrite;
 
 public class Teste {
@@ -18,50 +19,54 @@ public class Teste {
 
 	      // launch EXE and grab stdin/stdout and stderr
 	      //Process process = Runtime.getRuntime().exec("sandboxFolder/caixa.exe");
-	      Process process = new ProcessBuilder("sandboxFolder/codigoc.exe","-c").start();
-	      stdin = process.getOutputStream ();
-	      stderr = process.getErrorStream ();
+	      Process processCypher = new ProcessBuilder("sandboxFolder/testaesmachine.exe","-c").start();
+	      stdin = processCypher.getOutputStream ();
+	      stderr = processCypher.getErrorStream ();
 	      
-
-	      // "write" the parms into stdin
-	      line = ReadWrite.readFileToString("sandboxFolder/bananas.txt");
-	      //System.out.println("line1 "+line);
-	      stdin.write(line.getBytes());
-	      //System.out.println("Stdin1 "+stdin);
+	      
+	      
+	      String toWrite = "abcdefghij";
+	      byte[] toWriteInByte = Convert.encodeToBase64(toWrite);
+	      //System.out.println(toWriteInByte.length);
+	      stdin.write(toWriteInByte);
 	      stdin.flush();
-
-	     
-//	      line = "sandboxFolder/bananas.txt" + "\n";
-//	      System.out.println("line2 "+line);
-//	      stdin.write(line.getBytes() );
-//	      System.out.println("Stdin2"+stdin);
-//	      stdin.flush();
-
-//	      line = "sandboxFolder/morangos.txt" + "\n";
-//	      System.out.println("line3 "+line);
-//	      stdin.write(line.getBytes() );
-//	      System.out.println("Stdin3 "+stdin);
-//	      stdin.flush();
-
 	      stdin.close();
-	      stdout = process.getInputStream ();
-
-	      // clean up if any output in stdout
-	      BufferedReader brCleanUp =
-	        new BufferedReader (new InputStreamReader (stdout));
-	      while ((line = brCleanUp.readLine ()) != null) {
-	        System.out.println ("[Stdout] " + line);
-	      }
-	      brCleanUp.close();
-
-	      // clean up if any output in stderr
-	      brCleanUp =
-	        new BufferedReader (new InputStreamReader (stderr));
-	      while ((line = brCleanUp.readLine ()) != null) {
-	        System.out.println ("[Stderr] " + line);
-	      }
-	      brCleanUp.close();
-		
+	      
+	      
+	      stdout = processCypher.getInputStream ();
+	      int bytesAvailableCypher = stdout.available();
+	      while (bytesAvailableCypher <= 0){
+	    	  bytesAvailableCypher = stdout.available();
+	      }	      
+	      byte[] readFromBoxCypher  = new byte[bytesAvailableCypher];	      
+	      stdout.read(readFromBoxCypher, 0, bytesAvailableCypher);
+	      stdout.close();
+	    
+	      
+	      //System.out.print(readFromBoxCypher);
+	      //System.out.print("\n");
+	    
+	      Process processDecypher = new ProcessBuilder("sandboxFolder/testaesmachine.exe","-d").start();
+	      stdin = processDecypher.getOutputStream ();
+	      stderr = processDecypher.getErrorStream ();
+	      
+	      
+	      stdin.write(readFromBoxCypher);
+	      stdin.flush();
+	      stdin.close();
+	      
+	      stdout = processDecypher.getInputStream ();
+	      int bytesAvailableDecypher = stdout.available();
+	      while (bytesAvailableDecypher <= 0){
+	    	  bytesAvailableDecypher = stdout.available();
+	      }	      
+	      //System.out.println(bytesAvailableDecypher);
+	      byte[] readFromBoxDecypher  = new byte[bytesAvailableDecypher];	      
+	      stdout.read(readFromBoxDecypher, 0, bytesAvailableDecypher);
+	      stdout.close();
+	    
+	      System.out.print(Convert.decodeFromBase64(readFromBoxDecypher));
+	      		
 	}
 
 }
