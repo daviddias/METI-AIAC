@@ -15,6 +15,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import pteidlib.PteidException;
 import pteidlib.pteid;
+import aiac.aesC.AESCMiddleware;
 import aiac.aesJAVA.AES_API;
 import aiac.aesJAVA.BlockCypherMode;
 import aiac.aesJAVA.CypherMode;
@@ -26,6 +27,7 @@ import aiac.zip.unzip;
 
 public class Main {
 
+	static boolean useAESBox = false;
 	static Logger logger = Logger.getLogger(Main.class);
 
 	/**
@@ -127,9 +129,13 @@ public class Main {
 
 				// 5. Cypher - Cause you can't put all the thing into heap
 				if(useAES){
-					AES_API aes_api = new AES_API();
-					aes_api.init(CypherMode.ENCRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
-					result = aes_api.doFinal(result);
+					if (!useAESBox){
+						AES_API aes_api = new AES_API();
+						aes_api.init(CypherMode.ENCRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
+						result = aes_api.doFinal(result);
+					}else{
+						result = AESCMiddleware.cypher(result);
+					}
 				}
 
 				// 6. Write to File - "OUTPUT-SEND"
@@ -157,9 +163,14 @@ public class Main {
 
 				// 2. Decypher
 				if(useAES){
-					AES_API aes_api = new AES_API();
-					aes_api.init(CypherMode.DECRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
-					data = aes_api.doFinal(data);
+					if(!useAESBox){
+						AES_API aes_api = new AES_API();
+						aes_api.init(CypherMode.DECRYPT, BlockCypherMode.CBC, "shdyejfilke8shdc".getBytes());
+						data = aes_api.doFinal(data);
+					}
+					else{
+						data = AESCMiddleware.decypher(data);
+					}
 				}
 
 				// 3. Unzip (write the file, unzip, read again)
