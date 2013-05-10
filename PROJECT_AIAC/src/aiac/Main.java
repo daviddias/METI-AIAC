@@ -63,7 +63,7 @@ public class Main {
 				// 1. 1st Cycle - Cause you can't put all the thing into heap
 				// To Base64
 				String text = ReadWrite.readFileToString(pathOfFile);
-				byte[] textInBase64 = Convert.encodeToBase64(text);
+				byte[] textInBase64 = Convert.encodeToBase64FromString(text);
 
 
 				// 2nd Cycle - Cause you can't put all the thing into heap
@@ -138,7 +138,10 @@ public class Main {
 					}
 				}
 
-				// 6. Write to File - "OUTPUT-SEND"
+				// 6. Convert again to base64
+				result = Convert.encodeToBase64(result);
+				
+				// 7. Write to File - "OUTPUT-SEND"
 				File file = new File ("sandboxFolder/OUTPUT-TO-SEND");
 				FileOutputStream file_output = new FileOutputStream (file);
 				DataOutputStream data_out = new DataOutputStream (file_output);
@@ -160,8 +163,11 @@ public class Main {
 				data_in.read(data);
 				data_in.close();
 
-
-				// 2. Decypher
+				// 2. "Deconvert" from base64
+				data = Convert.decodeFromBase64(data);
+				
+				
+				// 3. Decypher
 				if(useAES){
 					if(!useAESBox){
 						AES_API aes_api = new AES_API();
@@ -169,11 +175,13 @@ public class Main {
 						data = aes_api.doFinal(data);
 					}
 					else{
+						System.out.println("FUI A CAIXA");
 						data = AESCMiddleware.decypher(data);
 					}
 				}
 
-				// 3. Unzip (write the file, unzip, read again)
+				System.out.println("SAI DA CAIXAsss");
+				// 4. Unzip (write the file, unzip, read again)
 				if (zip){
 					File fileFinal = new File ("sandboxFolder/tempUNZIPING");
 					FileOutputStream file_output = new FileOutputStream (fileFinal);
@@ -192,7 +200,7 @@ public class Main {
 
 
 
-				// 4. Validate Signature
+				// 5. Validate Signature
 				byte[] sign = new byte[128];
 				byte[] base64 = new byte[data.length-128];
 				byte[] time = new byte[46];
@@ -221,11 +229,11 @@ public class Main {
 				}	
 				logger.debug("\n Assinatura Validada com sucesso? : " + valide + "\n");
 
-				// 5. Save to file "OUTPUT-RECEIVED"
+				// 6. Save to file "OUTPUT-RECEIVED"
 				File fileFinal = new File ("sandboxFolder/OUTPUT-TO-RECEIVED");
 				FileOutputStream file_output = new FileOutputStream (fileFinal);
 				DataOutputStream data_out = new DataOutputStream (file_output);
-				String buf = Convert.decodeFromBase64(base64);// + "\n";
+				String buf = Convert.decodeFromBase64ToString(base64);// + "\n";
 				data_out.write(buf.getBytes());
 				file_output.close();
 

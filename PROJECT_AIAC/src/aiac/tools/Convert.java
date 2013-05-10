@@ -16,18 +16,27 @@ public class Convert {
 	//To Unicode & To Base64
 
 	
-	public static byte[] encodeToBase64(String text){
+	public static byte[] encodeToBase64FromString(String text){
 		return  Base64.encodeBase64(text.getBytes());   
 		//return Base64.encodeBase64(b);
 	}
 	
-	public static String decodeFromBase64(byte[] b){
+
+	
+	public static String decodeFromBase64ToString(byte[] b){
 	    byte[] decoded = Base64.decodeBase64(b);  
 	    return new String(decoded);
 	}
 	
 
-
+	public static byte[] decodeFromBase64(byte[] b){
+		return Base64.decodeBase64(b);  
+	     
+	}
+	
+	public static byte[] encodeToBase64(byte[] b){
+		return Base64.encodeBase64(b);  
+	}
 
 	
 }
